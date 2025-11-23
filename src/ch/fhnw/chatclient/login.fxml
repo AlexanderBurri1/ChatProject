@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="15" alignment="CENTER" xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="ch.fhnw.chatclient.LoginController">
+
+
+    <padding>
+        <Insets top="30" right="30" bottom="30" left="30"/>
+    </padding>
+
+    <!-- Title -->
+    <Label text="ChatProject Login" style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
+
+    <!-- Server address -->
+    <TextField fx:id="serverField" promptText="Server Address (default: http://localhost)"/>
+
+    <!-- Port -->
+    <TextField fx:id="portField" promptText="Port (default: 50001)"/>
+
+    <!-- Username -->
+    <TextField fx:id="usernameField" promptText="Username"/>
+
+    <!-- Password -->
+    <PasswordField fx:id="passwordField" promptText="Password"/>
+
+    <!-- Buttons -->
+    <HBox spacing="10" alignment="CENTER">
+        <Button fx:id="loginButton" text="Login" prefWidth="100"/>
+        <Button fx:id="registerButton" text="Register" prefWidth="100"/>
+    </HBox>
+
+    <!-- Status / error message -->
+    <Label fx:id="statusLabel" text="" style="-fx-text-fill: red;"/>
+
+</VBox>
+
