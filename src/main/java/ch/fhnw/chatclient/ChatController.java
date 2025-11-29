@@ -1,10 +1,13 @@
 package ch.fhnw.chatclient;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -25,6 +28,7 @@ public class ChatController {
     private final ApiClient api = state.getApi();
 
     private final Map<String, List<String>> conversations = new HashMap<>();
+    private Timeline autoRefresh;
 
     @FXML
     public void initialize() {
@@ -36,11 +40,41 @@ public class ChatController {
         logoutButton.setOnAction(e -> handleLogout());
         addContactButton.setOnAction(e -> handleAddContact());
 
+        // ----------------------------
+        // ENTER sends message
+        // ----------------------------
+        messageField.setOnKeyPressed(e -> {
+            switch (e.getCode()) {
+                case ENTER -> handleSend();
+            }
+        });
+
         contactList.getSelectionModel().selectedItemProperty().addListener(
                 (obs, oldVal, newVal) -> showConversation(newVal)
         );
+
+        startAutoRefresh();
     }
 
+    // -------------------------------------------------------
+    // AUTO REFRESH
+    // -------------------------------------------------------
+    private void startAutoRefresh() {
+        autoRefresh = new Timeline(new KeyFrame(
+                Duration.seconds(3),
+                e -> handleRefresh()
+        ));
+        autoRefresh.setCycleCount(Timeline.INDEFINITE);
+        autoRefresh.play();
+    }
+
+    private void stopAutoRefresh() {
+        if (autoRefresh != null) autoRefresh.stop();
+    }
+
+    // -------------------------------------------------------
+    // Add Contact
+    // -------------------------------------------------------
     private void handleAddContact() {
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Add Contact");
@@ -60,13 +94,16 @@ public class ChatController {
         });
     }
 
+    // -------------------------------------------------------
+    // Send message
+    // -------------------------------------------------------
     private void handleSend() {
         String contact = contactList.getSelectionModel().getSelectedItem();
         String msg = messageField.getText();
         String token = state.getToken();
 
         if (contact == null) {
-            showSystem("⚠ Select/add a contact.");
+            showSystem("⚠ Select/add a contact first.");
             return;
         }
 
@@ -88,10 +125,13 @@ public class ChatController {
             showConversation(contact);
             messageField.clear();
         } else {
-            showSystem("⚠ Error: " + response.toString());
+            showSystem("⚠ Error: " + response);
         }
     }
 
+    // -------------------------------------------------------
+    // Refresh / Poll
+    // -------------------------------------------------------
     private void handleRefresh() {
         JSONObject response = api.pollMessages(state.getToken());
 
@@ -124,7 +164,12 @@ public class ChatController {
         }
     }
 
+    // -------------------------------------------------------
+    // Logout
+    // -------------------------------------------------------
     private void handleLogout() {
+        stopAutoRefresh();
+
         api.logout(state.getToken());
 
         state.setToken(null);
@@ -142,6 +187,9 @@ public class ChatController {
         }
     }
 
+    // -------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------
     private void addMessage(String contact, String msg) {
         conversations.putIfAbsent(contact, new ArrayList<>());
         conversations.get(contact).add(msg);
