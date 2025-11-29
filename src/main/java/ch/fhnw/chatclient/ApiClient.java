@@ -1,5 +1,7 @@
 package ch.fhnw.chatclient;
 
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -11,7 +13,7 @@ public class ApiClient {
     private String serverAddress = "http://javaprojects.ch";
     private int serverPort = 50001;
 
-    public ApiClient() { }
+    public ApiClient() {}
 
     public void setServer(String address, int port) {
         this.serverAddress = address;
@@ -28,18 +30,18 @@ public class ApiClient {
         con.setRequestMethod("GET");
 
         BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-        StringBuilder response = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
         String line;
 
         while ((line = in.readLine()) != null) {
-            response.append(line);
+            sb.append(line);
         }
 
         in.close();
-        return response.toString();
+        return sb.toString();
     }
 
-    private String sendPost(String path, String jsonBody) throws Exception {
+    private String sendPost(String path, JSONObject json) throws Exception {
         URL url = new URL(buildUrl(path));
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod("POST");
@@ -47,87 +49,78 @@ public class ApiClient {
         con.setDoOutput(true);
 
         try (OutputStream os = con.getOutputStream()) {
-            os.write(jsonBody.getBytes());
+            os.write(json.toString().getBytes());
         }
 
         BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-        StringBuilder response = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
         String line;
 
         while ((line = in.readLine()) != null) {
-            response.append(line);
+            sb.append(line);
         }
 
         in.close();
-        return response.toString();
+        return sb.toString();
     }
 
-    // ----------------------------
-    // API METHODS
-    // ----------------------------
+    // -----------------------
+    // API calls (all return JSONObject)
+    // -----------------------
 
-    public String ping() {
-        try { return sendGet("/ping"); }
-        catch (Exception e) { return "{\"Error\":\"" + e.getMessage() + "\"}"; }
+    public JSONObject ping() {
+        try { return new JSONObject(sendGet("/ping")); }
+        catch (Exception e) { return new JSONObject().put("Error", e.getMessage()); }
     }
 
-    public String pingAuth(String token) {
-        String jsonBody = String.format("{ \"token\": \"%s\" }", token);
-        try { return sendPost("/ping", jsonBody); }
-        catch (Exception e) { return "{\"Error\":\"" + e.getMessage() + "\"}"; }
+    public JSONObject login(String username, String password) {
+        JSONObject req = new JSONObject()
+                .put("username", username)
+                .put("password", password);
+
+        try { return new JSONObject(sendPost("/user/login", req)); }
+        catch (Exception e) { return new JSONObject().put("Error", e.getMessage()); }
     }
 
-    public String register(String username, String password) {
-        String jsonBody = String.format(
-                "{ \"username\": \"%s\", \"password\": \"%s\" }",
-                username, password
-        );
+    public JSONObject register(String username, String password) {
+        JSONObject req = new JSONObject()
+                .put("username", username)
+                .put("password", password);
 
-        try { return sendPost("/user/register", jsonBody); }
-        catch (Exception e) { return "{\"Error\":\"" + e.getMessage() + "\"}"; }
+        try { return new JSONObject(sendPost("/user/register", req)); }
+        catch (Exception e) { return new JSONObject().put("Error", e.getMessage()); }
     }
 
-    public String login(String username, String password) {
-        String jsonBody = String.format(
-                "{ \"username\": \"%s\", \"password\": \"%s\" }",
-                username, password
-        );
+    public JSONObject logout(String token) {
+        JSONObject req = new JSONObject().put("token", token);
 
-        try { return sendPost("/user/login", jsonBody); }
-        catch (Exception e) { return "{\"Error\":\"" + e.getMessage() + "\"}"; }
+        try { return new JSONObject(sendPost("/user/logout", req)); }
+        catch (Exception e) { return new JSONObject().put("Error", e.getMessage()); }
     }
 
-    public String logout(String token) {
-        String jsonBody = String.format("{ \"token\": \"%s\" }", token);
+    public JSONObject isOnline(String token, String username) {
+        JSONObject req = new JSONObject()
+                .put("token", token)
+                .put("username", username);
 
-        try { return sendPost("/user/logout", jsonBody); }
-        catch (Exception e) { return "{\"Error\":\"" + e.getMessage() + "\"}"; }
+        try { return new JSONObject(sendPost("/user/online", req)); }
+        catch (Exception e) { return new JSONObject().put("Error", e.getMessage()); }
     }
 
-    public String isOnline(String token, String username) {
-        String jsonBody = String.format(
-                "{ \"token\": \"%s\", \"username\": \"%s\" }",
-                token, username
-        );
+    public JSONObject sendMessage(String token, String recipient, String message) {
+        JSONObject req = new JSONObject()
+                .put("token", token)
+                .put("username", recipient)
+                .put("message", message);
 
-        try { return sendPost("/user/online", jsonBody); }
-        catch (Exception e) { return "{\"Error\":\"" + e.getMessage() + "\"}"; }
+        try { return new JSONObject(sendPost("/chat/send", req)); }
+        catch (Exception e) { return new JSONObject().put("Error", e.getMessage()); }
     }
 
-    public String sendMessage(String token, String username, String message) {
-        String jsonBody = String.format(
-                "{ \"token\": \"%s\", \"username\": \"%s\", \"message\": \"%s\" }",
-                token, username, message
-        );
+    public JSONObject pollMessages(String token) {
+        JSONObject req = new JSONObject().put("token", token);
 
-        try { return sendPost("/chat/send", jsonBody); }
-        catch (Exception e) { return "{\"Error\":\"" + e.getMessage() + "\"}"; }
-    }
-
-    public String pollMessages(String token) {
-        String jsonBody = String.format("{ \"token\": \"%s\" }", token);
-
-        try { return sendPost("/chat/poll", jsonBody); }
-        catch (Exception e) { return "{\"Error\":\"" + e.getMessage() + "\"}"; }
+        try { return new JSONObject(sendPost("/chat/poll", req)); }
+        catch (Exception e) { return new JSONObject().put("Error", e.getMessage()); }
     }
 }

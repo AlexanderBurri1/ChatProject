@@ -5,6 +5,8 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.*;
 
@@ -34,120 +36,96 @@ public class ChatController {
         logoutButton.setOnAction(e -> handleLogout());
         addContactButton.setOnAction(e -> handleAddContact());
 
-        // When selecting a contact, show their messages
         contactList.getSelectionModel().selectedItemProperty().addListener(
                 (obs, oldVal, newVal) -> showConversation(newVal)
         );
     }
 
-    // -----------------------------------
-    // Add a new contact (dialog box)
-    // -----------------------------------
     private void handleAddContact() {
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Add Contact");
-        dialog.setHeaderText("Add someone you want to chat with");
+        dialog.setHeaderText("Enter username");
         dialog.setContentText("Username:");
 
-        Optional<String> result = dialog.showAndWait();
-        if (result.isPresent()) {
-            String username = result.get().trim();
+        dialog.showAndWait().ifPresent(name -> {
+            name = name.trim();
+            if (name.isEmpty()) return;
 
-            if (username.isEmpty()) {
-                showSystemMessage("⚠ Username cannot be empty.");
-                return;
+            if (!contactList.getItems().contains(name)) {
+                contactList.getItems().add(name);
+                conversations.putIfAbsent(name, new ArrayList<>());
             }
 
-            // Add contact
-            if (!contactList.getItems().contains(username)) {
-                contactList.getItems().add(username);
-                conversations.putIfAbsent(username, new ArrayList<>());
-            }
-
-            contactList.getSelectionModel().select(username);
-            showConversation(username);
-        }
+            contactList.getSelectionModel().select(name);
+        });
     }
 
-    // -----------------------------------
-    // Send message
-    // -----------------------------------
     private void handleSend() {
         String contact = contactList.getSelectionModel().getSelectedItem();
-        String message = messageField.getText();
+        String msg = messageField.getText();
         String token = state.getToken();
 
         if (contact == null) {
-            showSystemMessage("⚠ Select or add a contact first.");
+            showSystem("⚠ Select/add a contact.");
             return;
         }
 
-        if (message.isEmpty()) {
-            showSystemMessage("⚠ Message cannot be empty.");
+        if (msg.isEmpty()) {
+            showSystem("⚠ Message cannot be empty.");
             return;
         }
 
-        // Check online
-        String onlineResponse = api.isOnline(token, contact);
-        if (!onlineResponse.contains("true")) {
-            showSystemMessage("⚠ User is offline.");
+        JSONObject online = api.isOnline(token, contact);
+        if (!online.optBoolean("online", false)) {
+            showSystem("⚠ User is offline.");
             return;
         }
 
-        // Send
-        String response = api.sendMessage(token, contact, message);
-        if (response.contains("\"send\":true")) {
-            addMessage(contact, "You → " + contact + ": " + message);
+        JSONObject response = api.sendMessage(token, contact, msg);
+
+        if (response.optBoolean("send", false)) {
+            addMessage(contact, "You → " + contact + ": " + msg);
             showConversation(contact);
             messageField.clear();
         } else {
-            showSystemMessage("⚠ Error: " + response);
+            showSystem("⚠ Error: " + response.toString());
         }
     }
 
-    // -----------------------------------
-    // Refresh messages
-    // -----------------------------------
     private void handleRefresh() {
-        String token = state.getToken();
-        String response = api.pollMessages(token);
+        JSONObject response = api.pollMessages(state.getToken());
 
-        if (!response.contains("messages")) {
-            showSystemMessage("⚠ Error polling messages: " + response);
+        if (!response.has("messages")) {
+            showSystem("⚠ Error polling: " + response);
             return;
         }
 
-        String[] parts = response.split("\\{");
+        JSONArray msgs = response.getJSONArray("messages");
 
-        for (String p : parts) {
-            if (p.contains("username") && p.contains("message")) {
+        for (int i = 0; i < msgs.length(); i++) {
+            JSONObject m = msgs.getJSONObject(i);
 
-                String sender = extractValue(p, "username");
-                String msg = extractValue(p, "message");
+            String sender = m.getString("username");
+            String text = m.getString("message");
 
-                addMessage(sender, sender + " → you: " + msg);
+            addMessage(sender, sender + " → you: " + text);
 
-                if (!contactList.getItems().contains(sender)) {
-                    contactList.getItems().add(sender);
-                }
+            if (!contactList.getItems().contains(sender)) {
+                contactList.getItems().add(sender);
+            }
 
-                if (contactList.getSelectionModel().isEmpty()) {
-                    contactList.getSelectionModel().select(sender);
-                }
+            if (contactList.getSelectionModel().isEmpty()) {
+                contactList.getSelectionModel().select(sender);
+            }
 
-                if (contactList.getSelectionModel().getSelectedItem().equals(sender)) {
-                    showConversation(sender);
-                }
+            if (contactList.getSelectionModel().getSelectedItem().equals(sender)) {
+                showConversation(sender);
             }
         }
     }
 
-    // -----------------------------------
-    // Logout
-    // -----------------------------------
     private void handleLogout() {
-        String token = state.getToken();
-        api.logout(token);
+        api.logout(state.getToken());
 
         state.setToken(null);
         state.setUsername(null);
@@ -160,13 +138,10 @@ public class ChatController {
             stage.setScene(scene);
 
         } catch (Exception e) {
-            showSystemMessage("⚠ Error logging out: " + e.getMessage());
+            showSystem("⚠ Error logging out: " + e.getMessage());
         }
     }
 
-    // -----------------------------------
-    // Helpers
-    // -----------------------------------
     private void addMessage(String contact, String msg) {
         conversations.putIfAbsent(contact, new ArrayList<>());
         conversations.get(contact).add(msg);
@@ -175,19 +150,12 @@ public class ChatController {
     private void showConversation(String contact) {
         messageList.getItems().clear();
 
-        if (contact == null || !conversations.containsKey(contact)) return;
-
-        messageList.getItems().addAll(conversations.get(contact));
+        if (contact != null && conversations.containsKey(contact)) {
+            messageList.getItems().addAll(conversations.get(contact));
+        }
     }
 
-    private void showSystemMessage(String msg) {
+    private void showSystem(String msg) {
         messageList.getItems().add(msg);
-    }
-
-    private String extractValue(String text, String key) {
-        int start = text.indexOf(key) + key.length() + 3;
-        int end = text.indexOf("\"", start);
-        if (start < 0 || end < start) return "";
-        return text.substring(start, end);
     }
 }

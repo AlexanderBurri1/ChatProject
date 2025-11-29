@@ -1,13 +1,11 @@
 package ch.fhnw.chatclient;
 
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.fxml.FXMLLoader;
+import org.json.JSONObject;
 
 public class LoginController {
 
@@ -24,12 +22,17 @@ public class LoginController {
 
     @FXML
     public void initialize() {
-        // Pre-fill defaults
         serverField.setText("http://javaprojects.ch");
         portField.setText("50001");
 
         loginButton.setOnAction(e -> handleLogin());
         registerButton.setOnAction(e -> handleRegister());
+    }
+
+    private void configureApi() {
+        String server = serverField.getText();
+        int port = Integer.parseInt(portField.getText());
+        api.setServer(server, port);
     }
 
     private void handleLogin() {
@@ -38,19 +41,16 @@ public class LoginController {
         String username = usernameField.getText();
         String password = passwordField.getText();
 
-        String response = api.login(username, password);
+        JSONObject response = api.login(username, password);
 
-        if (response.contains("token")) {
-            String token = extractValue(response, "token");
-
+        if (response.has("token")) {
             state.setUsername(username);
-            state.setToken(token);
+            state.setToken(response.getString("token"));
 
             statusLabel.setText("Login successful!");
             openChatWindow();
-
         } else {
-            statusLabel.setText(response);
+            statusLabel.setText(response.toString());
         }
     }
 
@@ -60,30 +60,15 @@ public class LoginController {
         String username = usernameField.getText();
         String password = passwordField.getText();
 
-        String response = api.register(username, password);
+        JSONObject response = api.register(username, password);
 
-        if (response.contains("username")) {
-            statusLabel.setText("User registered! You can now login.");
+        if (response.has("username")) {
+            statusLabel.setText("User registered. You can now login.");
         } else {
-            statusLabel.setText(response);
+            statusLabel.setText(response.toString());
         }
     }
 
-    private void configureApi() {
-        String server = serverField.getText();
-        int port = Integer.parseInt(portField.getText());
-
-        api.setServer(server, port);
-    }
-
-    // Simple JSON extraction for key:value pairs
-    private String extractValue(String json, String key) {
-        int start = json.indexOf(key) + key.length() + 3;
-        int end = json.indexOf("\"", start);
-        return json.substring(start, end);
-    }
-
-    // Load the chat screen (Step 11)
     private void openChatWindow() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("chat.fxml"));
