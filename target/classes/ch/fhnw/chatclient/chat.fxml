@@ -8,7 +8,7 @@
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="ch.fhnw.chatclient.ChatController">
 
-    <!-- Top: Username + Refresh + Logout -->
+
     <top>
         <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 10;">
             <Label text="Logged in as:"/>
@@ -21,7 +21,7 @@
         </HBox>
     </top>
 
-    <!-- Left: contact list + Add Contact button -->
+
     <left>
         <VBox spacing="10" style="-fx-padding: 10;">
             <HBox spacing="5">
@@ -33,7 +33,7 @@
         </VBox>
     </left>
 
-    <!-- Center: messages -->
+
     <center>
         <VBox spacing="10" style="-fx-padding: 10;">
             <Label text="Conversation" style="-fx-font-weight: bold;"/>
@@ -41,7 +41,7 @@
         </VBox>
     </center>
 
-    <!-- Bottom: message input -->
+
     <bottom>
         <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 10;">
             <TextField fx:id="messageField" promptText="Type your message..." HBox.hgrow="ALWAYS"/>

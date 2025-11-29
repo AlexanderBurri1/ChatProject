@@ -40,9 +40,6 @@ public class ChatController {
         logoutButton.setOnAction(e -> handleLogout());
         addContactButton.setOnAction(e -> handleAddContact());
 
-        // ----------------------------
-        // ENTER sends message
-        // ----------------------------
         messageField.setOnKeyPressed(e -> {
             switch (e.getCode()) {
                 case ENTER -> handleSend();
@@ -56,9 +53,6 @@ public class ChatController {
         startAutoRefresh();
     }
 
-    // -------------------------------------------------------
-    // AUTO REFRESH
-    // -------------------------------------------------------
     private void startAutoRefresh() {
         autoRefresh = new Timeline(new KeyFrame(
                 Duration.seconds(3),
@@ -72,9 +66,6 @@ public class ChatController {
         if (autoRefresh != null) autoRefresh.stop();
     }
 
-    // -------------------------------------------------------
-    // Add Contact
-    // -------------------------------------------------------
     private void handleAddContact() {
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Add Contact");
@@ -94,9 +85,6 @@ public class ChatController {
         });
     }
 
-    // -------------------------------------------------------
-    // Send message
-    // -------------------------------------------------------
     private void handleSend() {
         String contact = contactList.getSelectionModel().getSelectedItem();
         String msg = messageField.getText();
@@ -129,9 +117,6 @@ public class ChatController {
         }
     }
 
-    // -------------------------------------------------------
-    // Refresh / Poll
-    // -------------------------------------------------------
     private void handleRefresh() {
         JSONObject response = api.pollMessages(state.getToken());
 
@@ -164,9 +149,6 @@ public class ChatController {
         }
     }
 
-    // -------------------------------------------------------
-    // Logout
-    // -------------------------------------------------------
     private void handleLogout() {
         stopAutoRefresh();
 
@@ -187,9 +169,6 @@ public class ChatController {
         }
     }
 
-    // -------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------
     private void addMessage(String contact, String msg) {
         conversations.putIfAbsent(contact, new ArrayList<>());
         conversations.get(contact).add(msg);

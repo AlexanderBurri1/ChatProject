@@ -64,10 +64,6 @@ public class ApiClient {
         return sb.toString();
     }
 
-    // -----------------------
-    // API calls (all return JSONObject)
-    // -----------------------
-
     public JSONObject ping() {
         try { return new JSONObject(sendGet("/ping")); }
         catch (Exception e) { return new JSONObject().put("Error", e.getMessage()); }

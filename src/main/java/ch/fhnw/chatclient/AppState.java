@@ -20,9 +20,6 @@ public class AppState {
         return instance;
     }
 
-    // -----------------------------
-    // Username
-    // -----------------------------
     public void setUsername(String username) {
         this.username = username;
     }
@@ -31,9 +28,7 @@ public class AppState {
         return username;
     }
 
-    // -----------------------------
-    // Token
-    // -----------------------------
+
     public void setToken(String token) {
         this.token = token;
     }
@@ -42,9 +37,7 @@ public class AppState {
         return token;
     }
 
-    // -----------------------------
-    // ApiClient
-    // -----------------------------
+
     public ApiClient getApi() {
         return apiClient;
     }
