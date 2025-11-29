@@ -8,26 +8,42 @@
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="ch.fhnw.chatclient.ChatController">
 
-    <!-- Top bar -->
+    <!-- Top: Username + Refresh + Logout -->
     <top>
         <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 10;">
             <Label text="Logged in as:"/>
             <Label fx:id="usernameLabel" style="-fx-font-weight: bold;"/>
+
             <Pane HBox.hgrow="ALWAYS"/>
+
             <Button fx:id="refreshButton" text="Refresh"/>
             <Button fx:id="logoutButton" text="Logout"/>
         </HBox>
     </top>
 
-    <!-- Center: Messages -->
+    <!-- Left: contact list + Add Contact button -->
+    <left>
+        <VBox spacing="10" style="-fx-padding: 10;">
+            <HBox spacing="5">
+                <Label text="Contacts" style="-fx-font-weight: bold;"/>
+                <Button fx:id="addContactButton" text="+" prefWidth="30"/>
+            </HBox>
+
+            <ListView fx:id="contactList" prefWidth="150" VBox.vgrow="ALWAYS"/>
+        </VBox>
+    </left>
+
+    <!-- Center: messages -->
     <center>
-        <ListView fx:id="messageList" />
+        <VBox spacing="10" style="-fx-padding: 10;">
+            <Label text="Conversation" style="-fx-font-weight: bold;"/>
+            <ListView fx:id="messageList" VBox.vgrow="ALWAYS"/>
+        </VBox>
     </center>
 
     <!-- Bottom: message input -->
     <bottom>
         <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 10;">
-            <TextField fx:id="recipientField" promptText="Recipient username" prefWidth="150"/>
             <TextField fx:id="messageField" promptText="Type your message..." HBox.hgrow="ALWAYS"/>
             <Button fx:id="sendButton" text="Send"/>
         </HBox>
